@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home.dart';
+import 'signin.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       title: 'Pill Reminder App',
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: SignIn(),
     );
   }
 }
