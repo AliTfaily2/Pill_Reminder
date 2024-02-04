@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert' as convert;
 import 'signin.dart';
+import 'showpills.dart';
 
-const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData =
 EncryptedSharedPreferences();
 
@@ -22,15 +20,18 @@ class _HomeState extends State<Home> {
   void displayStatus(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
-  void updateName(String name) {
+
+  void setName()async{
+    String temp =  await _encryptedData.getString('name');
     setState(() {
-      username = 'Welcome, $name!';
+      username = 'Welcome, $temp!';
     });
+
   }
 
   @override
   void initState() {
-    getUsername(updateName, displayStatus);
+    setName();
     super.initState();
   }
 
@@ -46,10 +47,12 @@ class _HomeState extends State<Home> {
         actions: [
           IconButton(onPressed: () {
             _encryptedData.remove('myKey').then((success) {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const SignIn())
-              );
+              if (success) {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SignIn()));
+              } else {
+                displayStatus('Logout failed');
+              }
             });
           }, icon: const Icon(Icons.logout,color: Colors.white,)),
         ],
@@ -60,12 +63,16 @@ class _HomeState extends State<Home> {
             SizedBox(height: height*0.05,),
             Row(
               children: [
-                SizedBox(width: 25,),
-                Text(username, style: TextStyle(fontSize: 23,letterSpacing: 3,fontWeight: FontWeight.w500,color: Colors.blueGrey),),
+                const SizedBox(width: 25,),
+                Text(username, style: const TextStyle(fontSize: 23,letterSpacing: 3,fontWeight: FontWeight.w500,color: Colors.blueGrey),),
               ],
             ),
             SizedBox(height: height*0.07,),
-            GestureDetector(onTap:(){},child: Container(
+            GestureDetector(onTap:(){
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context)=> const ShowPills())
+              );
+            },child: Container(
               height: height * 0.15,
               width: width * 0.9,
               decoration: BoxDecoration(
@@ -104,25 +111,5 @@ class _HomeState extends State<Home> {
         ),
       ),
     );
-  }
-}
-void getUsername(Function(String name) updateName,
-    Function(String text) displayStatus) async {
-  try {
-    String userID = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/getUsername.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8'
-        },
-        body: convert.jsonEncode(<String, String>{'uid': userID}))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      var row = jsonResponse[0];
-      updateName(row['name']);
-    }
-  } catch (e) {
-    displayStatus('Failed to set username');
   }
 }

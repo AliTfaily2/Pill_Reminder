@@ -161,7 +161,9 @@ class _RegisterState extends State<Register> {
                       height: 20,
                     ),
                     ElevatedButton(
-                        onPressed: () {
+                        onPressed: _loading
+                            ? null
+                            : () {
                           if (_formKey.currentState!.validate()) {
                             setState(() {
                               _loading = true;
@@ -169,7 +171,7 @@ class _RegisterState extends State<Register> {
                             registerUser(confirm,_username.text.toString(),_email.text.toString(),_password.text.toString());
                           }
                         },
-                        child: Text(
+                        child: const Text(
                           'Register',
                           style: TextStyle(fontSize: 24, color: Colors.lightBlue),
                         )),

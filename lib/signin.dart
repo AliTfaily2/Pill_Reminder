@@ -29,8 +29,6 @@ class _SignInState extends State<SignIn> {
       Navigator.of(context).pop();
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const Home()));
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Success')));
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Login Failed!')));
@@ -139,7 +137,9 @@ class _SignInState extends State<SignIn> {
                       height: 20,
                     ),
                     ElevatedButton(
-                        onPressed: () {
+                        onPressed: _loading
+                        ? null
+                        : () {
                           if (_formKey.currentState!.validate()) {
                             setState(() {
                               _loading = true;
@@ -148,7 +148,7 @@ class _SignInState extends State<SignIn> {
                                 _email.text.toString(), _password.text.toString());
                           }
                         },
-                        child:  Text(
+                        child:  const Text(
                           'Sign in',
                           style: TextStyle(fontSize: 24, color: Colors.lightBlue),
                         )),
@@ -199,7 +199,7 @@ void checkLogin(
       final jsonResponse = convert.jsonDecode(response.body);
       var row = jsonResponse[0];
       _encryptedData.setString('myKey', row['uid']);
-      print(row['notif'] + row['notifNum']);
+      _encryptedData.setString('name', row['name']);
       loginconfirm(true);
     }
   } catch (e) {
