@@ -24,7 +24,7 @@ class _SignInState extends State<SignIn> {
 
   bool _loading = false;
 
-  void loginconfirm(bool success) {
+  void loginconfirm(bool success) async{
     if (success) {
       Navigator.of(context).pop();
       Navigator.of(context)
@@ -198,8 +198,9 @@ void checkLogin(
     if (response.statusCode == 200) {
       final jsonResponse = convert.jsonDecode(response.body);
       var row = jsonResponse[0];
+      print('sign is ${row['uid']}');
       _encryptedData.setString('myKey', row['uid']);
-      _encryptedData.setString('name', row['name']);
+      _encryptedData.setString('myName', row['name']);
       loginconfirm(true);
     }
   } catch (e) {

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'notifications.dart';
 import 'signin.dart';
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initializeNotification();
   runApp(const MyApp());
 }
 

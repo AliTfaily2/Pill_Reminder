@@ -9,12 +9,12 @@ final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 
 List<Pill> _pills = [
-  Pill('', 0, 0, '', '', '', '', false),
-  Pill('', 0, 0, '', '', '', '', false),
-  Pill('', 0, 0, '', '', '', '', false),
-  Pill('', 0, 0, '', '', '', '', false),
-  Pill('', 0, 0, '', '', '', '', false),
-  Pill('', 0, 0, '', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('','', 0, 0, 0 ,'', '', '', '', false),
 ];
 
 class ShowPills extends StatefulWidget {
@@ -42,7 +42,6 @@ class _ShowPillsState extends State<ShowPills> {
   @override
   Widget build(BuildContext context) {
     double h = MediaQuery.of(context).size.height;
-    double w = MediaQuery.of(context).size.width;
     return Scaffold(
         appBar: AppBar(
           iconTheme: const IconThemeData(color: Colors.white),
@@ -78,9 +77,9 @@ class _ShowPillsState extends State<ShowPills> {
 }
 
 class Buttons extends StatelessWidget {
-  int index;
+  final int index;
 
-  Buttons({required this.index, super.key});
+  const Buttons({required this.index, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -111,12 +110,12 @@ class Buttons extends StatelessWidget {
                     _pills[index].option?Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: TextStyle(color: Colors.white,fontSize: 16),),
+                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: const TextStyle(color: Colors.white,fontSize: 16),),
                         const SizedBox(width: 30,),
-                        Text('${_pills[index].hour2}:${_pills[index].minute2}',style: TextStyle(color: Colors.white,fontSize: 16),)
+                        Text('${_pills[index].hour2}:${_pills[index].minute2}',style: const TextStyle(color: Colors.white,fontSize: 16),)
                       ],
                     ):
-                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: TextStyle(color: Colors.white,fontSize: 16),)
+                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: const TextStyle(color: Colors.white,fontSize: 16),)
                   ],
                 ),
               ),
@@ -149,6 +148,7 @@ class Buttons extends StatelessWidget {
 void getPills(Function(String text) confirm, Function() refresh) async {
   try {
     String uid = await _encryptedData.getString('myKey');
+    print('uid is: $uid');
     final response = await http
         .post(Uri.parse('$_baseURL/getPills.php'),
             headers: <String, String>{
@@ -160,13 +160,15 @@ void getPills(Function(String text) confirm, Function() refresh) async {
         .timeout(const Duration(seconds: 5));
     _pills.clear();
     if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      for (var row in jsonResponse) {
+     final jsonResponse = convert.jsonDecode(response.body);
+     for (var row in jsonResponse) {
         if (row['hour2'] == null) {
           Pill p = Pill(
+              row['pid'],
               row['pname'],
               int.parse(row['totalp']),
               int.parse(row['dosage']),
+              int.parse(row['pillsTook']),
               row['hour1'],
               row['minute1'],
               '',
@@ -175,9 +177,11 @@ void getPills(Function(String text) confirm, Function() refresh) async {
           _pills.add(p);
         } else {
           Pill p = Pill(
+              row['pid'],
               row['pname'],
               int.parse(row['totalp']),
               int.parse(row['dosage']),
+              int.parse(row['pillsTook']),
               row['hour1'],
               row['minute1'],
               row['hour2'],
@@ -188,7 +192,7 @@ void getPills(Function(String text) confirm, Function() refresh) async {
       }
       for (var x = _pills.length; x < 6; x++) {
         _pills.add(
-          Pill('', 0, 0, '', '', '', '', false),
+          Pill('','', 0, 0, 0 ,'', '', '', '', false),
         );
       }
       refresh();

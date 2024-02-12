@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'notifications.dart';
 import 'dart:convert' as convert;
 
 final EncryptedSharedPreferences _encryptedData =
@@ -33,7 +34,6 @@ class _AddPillState extends State<AddPill> {
     });
     Navigator.of(context).pop();
   }
-
   @override
   void dispose() {
     _pillname.dispose();
@@ -227,6 +227,28 @@ void addPill(Function(String text) confirm, String name, String total, String do
         }))
         .timeout(const Duration(seconds: 5));
     if (response.statusCode == 200) {
+          String temp = await _encryptedData.getString('notifOn');
+          bool n = true;
+          if(temp == '1'){
+            n = true;
+          }else{
+            n = false;
+          }
+          await NotificationService.showDailyNotificationAtHourMinute(
+              title: 'Pill Time!',
+              body: 'It\'s time to take $name',
+              hour: int.parse(hour1),
+              minute: int.parse(minute1),
+              notificationsEnabled: n);
+          if (option == 'true') {
+            await NotificationService.showDailyNotificationAtHourMinute(
+                title: 'Pill Time!',
+                body: 'It\'s time to take $name',
+                hour: int.parse(hour2),
+                minute: int.parse(minute2),
+                notificationsEnabled: n);
+          };
+
       confirm(response.body);
     }
   }catch(e){
