@@ -1,5 +1,11 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
+
+const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
+final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
 
 class NotificationService {
   static Future<void> initializeNotification() async {
@@ -54,7 +60,8 @@ class NotificationService {
   /// Use this method to detect every time that a new notification is displayed
   static Future<void> onNotificationDisplayedMethod(
       ReceivedNotification receivedNotification) async {
-    debugPrint('onNotificationDisplayedMethod');
+    addAlert(receivedNotification.title.toString(),receivedNotification.body.toString());
+
   }
 
   /// Use this method to detect if the user dismissed a notification
@@ -217,4 +224,22 @@ class NotificationService {
 
 }
 
+void addAlert(String title, String msg) async {
+  try {
+    String uid = await _encryptedData.getString('myKey');
+    final response = await http.post(
+        Uri.parse('$_baseURL/addAlert.php'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: convert.jsonEncode(<String, String>{
+          'uid': uid,
+          'title': title,
+          'msg': msg,
+        }))
+        .timeout(const Duration(seconds: 5));
 
+  } catch (e) {
+    return;
+  }
+}

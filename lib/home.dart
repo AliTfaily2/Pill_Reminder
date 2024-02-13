@@ -5,6 +5,7 @@ import 'dart:convert' as convert;
 import 'signin.dart';
 import 'showpills.dart';
 import 'settings.dart';
+import 'alert.dart';
 
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
@@ -138,7 +139,11 @@ class _HomeState extends State<Home> {
               height: height * 0.05,
             ),
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context)=>const Alerts())
+                );
+              },
               child: Container(
                 height: height * 0.15,
                 width: width * 0.9,
