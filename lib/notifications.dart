@@ -83,12 +83,26 @@ class NotificationService {
     final List<NotificationActionButton>? actionButtons,
     required final int hour,
     required final int minute,
+    final int? delayHours,
+    required final bool notificationsEnabled,
+    required final int id
   }) async {
+    if (!notificationsEnabled) {
+      // Notifications are not enabled for this user
+      return;
+    }
     final now = DateTime.now();
     final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+    DateTime notificationTime;
+    if (delayHours != null && delayHours > 0) {
+      notificationTime = scheduledTime.add(Duration(hours: delayHours));
+    } else {
+      notificationTime = scheduledTime;
+    }
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
-        id: -1,
+        id: id,
         channelKey: 'high_importance_channel',
         title: title,
         body: body,
@@ -101,14 +115,16 @@ class NotificationService {
       ),
       actionButtons: actionButtons,
       schedule: NotificationInterval(
-        interval: (scheduledTime.millisecondsSinceEpoch -
+        interval: (notificationTime.millisecondsSinceEpoch -
                 now.millisecondsSinceEpoch) ~/
             1000,
         timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
         preciseAlarm: true,
+        repeats: true
       ),
     );
   }
+
 
   static Future<void> showDailyNotificationAtHourMinute({
     required final String title,
@@ -123,6 +139,7 @@ class NotificationService {
     required final int hour,
     required final int minute,
     required final bool notificationsEnabled,
+    required final int id
   }) async {
     if (!notificationsEnabled) {
       // Notifications are not enabled for this user
@@ -131,7 +148,7 @@ class NotificationService {
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
-        id: -1,
+        id: id,
         channelKey: 'high_importance_channel',
         title: title,
         body: body,
@@ -151,4 +168,53 @@ class NotificationService {
       ),
     );
   }
+  static Future<void> showNotificationBeforeScheduledTime({
+    required final String title,
+    required final String body,
+    final String? summary,
+    final Map<String, String>? payload,
+    final ActionType actionType = ActionType.Default,
+    final NotificationLayout notificationLayout = NotificationLayout.Default,
+    final NotificationCategory? category,
+    final String? bigPicture,
+    final List<NotificationActionButton>? actionButtons,
+    required final int hour,
+    required final int minute,
+    required final int before,
+    required final bool notificationsEnabled,
+    required final int id
+  }) async {
+    if (!notificationsEnabled) {
+      return;
+    }
+    final now = DateTime.now();
+    final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+    final notificationTime = scheduledTime.subtract(Duration(hours: before));
+
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: id,
+        channelKey: 'high_importance_channel',
+        title: title,
+        body: body,
+        actionType: actionType,
+        notificationLayout: notificationLayout,
+        summary: summary,
+        category: category,
+        payload: payload,
+        bigPicture: bigPicture,
+      ),
+      actionButtons: actionButtons,
+      schedule: NotificationInterval(
+        interval: (notificationTime.millisecondsSinceEpoch -
+            now.millisecondsSinceEpoch) ~/
+            1000,
+        timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
+        preciseAlarm: true,
+      ),
+    );
+  }
+
 }
+
+

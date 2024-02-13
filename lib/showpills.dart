@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:pill_reminder/pill_clicked.dart';
 import 'dart:convert' as convert;
 import 'add_pill.dart';
 import 'pill.dart';
@@ -9,12 +10,12 @@ final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 
 List<Pill> _pills = [
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
-  Pill('','', 0, 0, 0 ,'', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
+  Pill('', '', 0, 0, 0, '', '', '', '', false),
 ];
 
 class ShowPills extends StatefulWidget {
@@ -87,7 +88,11 @@ class Buttons extends StatelessWidget {
     double w = MediaQuery.of(context).size.width;
     return _pills[index].totalPills != 0
         ? GestureDetector(
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const PillClick(),
+                  settings: RouteSettings(arguments: _pills[index])));
+            },
             child: Container(
               height: h * 0.15,
               width: w * 0.8,
@@ -102,20 +107,52 @@ class Buttons extends StatelessWidget {
               child: Center(
                 child: Column(
                   children: [
-                    SizedBox(height: h*0.012,),
-                    Text(_pills[index].name,style: const TextStyle(fontSize: 30,color: Colors.white,letterSpacing: 2,fontWeight: FontWeight.bold),),
-                    _pills[index].dose == 1? Text('${_pills[index].dose} Pill',style: const TextStyle(fontSize: 18,color: Colors.white),)
-                        :
-                    Text('${_pills[index].dose} Pills',style: const TextStyle(fontSize: 18,color: Colors.white),),
-                    _pills[index].option?Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: const TextStyle(color: Colors.white,fontSize: 16),),
-                        const SizedBox(width: 30,),
-                        Text('${_pills[index].hour2}:${_pills[index].minute2}',style: const TextStyle(color: Colors.white,fontSize: 16),)
-                      ],
-                    ):
-                        Text('${_pills[index].hour1}:${_pills[index].minute1}',style: const TextStyle(color: Colors.white,fontSize: 16),)
+                    SizedBox(
+                      height: h * 0.012,
+                    ),
+                    Text(
+                      _pills[index].name,
+                      style: const TextStyle(
+                          fontSize: 30,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    _pills[index].dose == 1
+                        ? Text(
+                            '${_pills[index].dose} Pill',
+                            style: const TextStyle(
+                                fontSize: 18, color: Colors.white),
+                          )
+                        : Text(
+                            '${_pills[index].dose} Pills',
+                            style: const TextStyle(
+                                fontSize: 18, color: Colors.white),
+                          ),
+                    _pills[index].option
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${_pills[index].hour1 == '0'? '00':_pills[index].hour1}:${_pills[index].minute1 == '0' ? '00' : _pills[index].minute1}',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 16),
+                              ),
+                              const SizedBox(
+                                width: 30,
+                              ),
+                              Text(
+                                '${_pills[index].hour2 == '0'? '00':_pills[index].hour2}:${_pills[index].minute2 == '0' ? '00' : _pills[index].minute2}',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 16),
+                              )
+                            ],
+                          )
+                        : Text(
+                            '${_pills[index].hour1 == '0'? '00':_pills[index].hour1}:${_pills[index].minute1 == '0' ? '00' : _pills[index].minute1}',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          )
                   ],
                 ),
               ),
@@ -148,7 +185,6 @@ class Buttons extends StatelessWidget {
 void getPills(Function(String text) confirm, Function() refresh) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    print('uid is: $uid');
     final response = await http
         .post(Uri.parse('$_baseURL/getPills.php'),
             headers: <String, String>{
@@ -160,8 +196,8 @@ void getPills(Function(String text) confirm, Function() refresh) async {
         .timeout(const Duration(seconds: 5));
     _pills.clear();
     if (response.statusCode == 200) {
-     final jsonResponse = convert.jsonDecode(response.body);
-     for (var row in jsonResponse) {
+      final jsonResponse = convert.jsonDecode(response.body);
+      for (var row in jsonResponse) {
         if (row['hour2'] == null) {
           Pill p = Pill(
               row['pid'],
@@ -192,7 +228,7 @@ void getPills(Function(String text) confirm, Function() refresh) async {
       }
       for (var x = _pills.length; x < 6; x++) {
         _pills.add(
-          Pill('','', 0, 0, 0 ,'', '', '', '', false),
+          Pill('', '', 0, 0, 0, '', '', '', '', false),
         );
       }
       refresh();

@@ -227,6 +227,9 @@ void addPill(Function(String text) confirm, String name, String total, String do
         }))
         .timeout(const Duration(seconds: 5));
     if (response.statusCode == 200) {
+          final jsonResponse = convert.jsonDecode(response.body);
+          var row = jsonResponse[0];
+          int pid = int.parse(row['pid']);
           String temp = await _encryptedData.getString('notifOn');
           bool n = true;
           if(temp == '1'){
@@ -234,22 +237,264 @@ void addPill(Function(String text) confirm, String name, String total, String do
           }else{
             n = false;
           }
-          await NotificationService.showDailyNotificationAtHourMinute(
-              title: 'Pill Time!',
-              body: 'It\'s time to take $name',
-              hour: int.parse(hour1),
-              minute: int.parse(minute1),
-              notificationsEnabled: n);
-          if (option == 'true') {
+          String notNum = await _encryptedData.getString('notifNum');
+
+          if(notNum == '3'){
             await NotificationService.showDailyNotificationAtHourMinute(
+                id: pid,
                 title: 'Pill Time!',
                 body: 'It\'s time to take $name',
-                hour: int.parse(hour2),
-                minute: int.parse(minute2),
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
                 notificationsEnabled: n);
-          };
+            await NotificationService.showNotificationBeforeScheduledTime(
+                id: int.parse('$uid$pid\4'),
+                title: 'MedMinder',
+                body: 'You will take $name after 1 hour',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                before: 1,
+                notificationsEnabled: n);
+            await NotificationService.showNotificationBeforeScheduledTime(
+                id: int.parse('$uid$pid\8'),
+                title: 'MedMinder',
+                body: 'You will take $name after 2 hour',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                before: 2,
+                notificationsEnabled: n);
 
-      confirm(response.body);
+
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\3'),
+                title: 'Pill Missed!',
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                delayHours: 1,
+                notificationsEnabled: n
+            );
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\6'),
+                title: 'Pill Missed!',
+                delayHours: 2,
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                notificationsEnabled: n
+            );
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\9'),
+                title: 'Pill Missed!',
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                delayHours: 3,
+                minute: int.parse(minute1),
+                notificationsEnabled: n
+            );
+
+            if (option == 'true'){
+
+
+              await NotificationService.showDailyNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\1'),
+                  title: 'Pill Time!',
+                  body: 'It\'s time to take $name',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+              await NotificationService.showNotificationBeforeScheduledTime(
+                  id: int.parse('$uid$pid\5'),
+                  title: 'MedMinder',
+                  body: 'You will take $name after 1 hour',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  before: 1,
+                  notificationsEnabled: n);
+              await NotificationService.showNotificationBeforeScheduledTime(
+                  id: int.parse('$uid$pid\10'),
+                  title: 'MedMinder',
+                  body: 'You will take $name after 1 hour',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  before: 2,
+                  notificationsEnabled: n);
+
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\2'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 1,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\7'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 2,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\11'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 3,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+
+            }
+
+          }else if(notNum == '2'){
+
+            await NotificationService.showDailyNotificationAtHourMinute(
+                id: pid,
+                title: 'Pill Time!',
+                body: 'It\'s time to take $name',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                notificationsEnabled: n);
+            await NotificationService.showNotificationBeforeScheduledTime(
+                id: int.parse('$uid$pid\4'),
+                title: 'MedMinder',
+                body: 'You will take $name after 1 hour',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                before: 1,
+                notificationsEnabled: n);
+
+
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\3'),
+                title: 'Pill Missed!',
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                delayHours: 1,
+                minute: int.parse(minute1),
+                notificationsEnabled: n
+            );
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\6'),
+                title: 'Pill Missed!',
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                delayHours: 2,
+                minute: int.parse(minute1),
+                notificationsEnabled: n
+            );
+
+
+            if (option == 'true'){
+
+
+              await NotificationService.showDailyNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\1'),
+                  title: 'Pill Time!',
+                  body: 'It\'s time to take $name',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+              await NotificationService.showNotificationBeforeScheduledTime(
+                  id: int.parse('$uid$pid\5'),
+                  title: 'MedMinder',
+                  body: 'You will take $name after 1 hour',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  before: 1,
+                  notificationsEnabled: n);
+
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\2'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 1,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\7'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 2,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+
+            }
+
+          }else{
+
+
+
+            await NotificationService.showDailyNotificationAtHourMinute(
+                id: pid,
+                title: 'Pill Time!',
+                body: 'It\'s time to take $name',
+                hour: int.parse(hour1),
+                minute: int.parse(minute1),
+                notificationsEnabled: n);
+
+            await NotificationService.showNotificationAtHourMinute(
+                id: int.parse('$uid$pid\3'),
+                title: 'Pill Missed!',
+                body: 'You missed to take $name, Take it as soon as possible',
+                hour: int.parse(hour1),
+                delayHours: 1,
+                minute: int.parse(minute1),
+                notificationsEnabled: n
+            );
+            if (option == 'true') {
+              await NotificationService.showDailyNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\1'),
+                  title: 'Pill Time!',
+                  body: 'It\'s time to take $name',
+                  hour: int.parse(hour2),
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+              await NotificationService.showNotificationAtHourMinute(
+                  id: int.parse('$uid$pid\2'),
+                  title: 'Pill Missed!',
+                  body: 'You missed to take $name, Take it as soon as possible',
+                  hour: int.parse(hour2),
+                  delayHours: 1,
+                  minute: int.parse(minute2),
+                  notificationsEnabled: n);
+            }
+
+          }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      confirm('Pill added successfully!');
     }
   }catch(e){
       confirm('connection error');

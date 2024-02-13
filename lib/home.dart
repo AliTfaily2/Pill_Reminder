@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'signin.dart';
 import 'showpills.dart';
-import 'notifications.dart';
+import 'settings.dart';
 
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
@@ -62,6 +62,10 @@ class _HomeState extends State<Home> {
           IconButton(
               onPressed: () {
                 _encryptedData.remove('myKey').then((success) {
+                  _encryptedData.remove('email');
+                  _encryptedData.remove('name');
+                  _encryptedData.remove('notifOn');
+                  _encryptedData.remove('notifNum');
                   if (success) {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(MaterialPageRoute(
@@ -131,7 +135,7 @@ class _HomeState extends State<Home> {
               ),
             ),
             SizedBox(
-              height: height * 0.1,
+              height: height * 0.05,
             ),
             GestureDetector(
               onTap: () {},
@@ -158,6 +162,39 @@ class _HomeState extends State<Home> {
                   ],
                 ),
               ),
+            ),
+            SizedBox(
+              height: height * 0.05,
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context)=> const AppSettings())
+                );
+              },
+              child: Container(
+                height: height * 0.15,
+                width: width * 0.9,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: const DecorationImage(
+                        image: AssetImage('assets/settings.jpg'),
+                        fit: BoxFit.cover)),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 25,
+                    ),
+                    Text(
+                      'SETTINGS',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 36,
+                          color: Colors.white),
+                    )
+                  ],
+                ),
+              ),
             )
           ],
         ),
@@ -171,8 +208,6 @@ void getUserData(
   try {
     Future.delayed(const Duration(seconds: 1), () async{
       String uid = await _encryptedData.getString('myKey');
-
-    print('uid is: $uid');
     final response = await http
         .post(Uri.parse('$_baseURL/getUserData.php'),
             headers: <String, String>{
@@ -183,14 +218,14 @@ void getUserData(
     if (response.statusCode == 200) {
       final jsonResponse = convert.jsonDecode(response.body);
       var row = jsonResponse[0];
-      //_encryptedData.setString('notifOn', row['notif']);
-      //_encryptedData.setString('notifNum', row['notifNum']);
+      _encryptedData.setString('email', row['email']);
+      _encryptedData.setString('name',  row['name']);
+      _encryptedData.setString('notifOn', row['notif']);
+      _encryptedData.setString('notifNum', row['notifNum']);
       setName(row['name']);
-      print(response.body);
     }
     });
   } catch (e) {
-    print(e);
     confirm(false);
   }
 }
