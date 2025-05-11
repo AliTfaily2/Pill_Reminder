@@ -3,6 +3,8 @@ import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 
+import 'DatabaseHelper.dart';
+
 List<String> titles = [''];
 List<String> messages = [''];
 
@@ -16,10 +18,15 @@ class Alerts extends StatefulWidget {
   State<Alerts> createState() => _AlertsState();
 }
 
+
 class _AlertsState extends State<Alerts> {
+  void confirm(String text) {
+    setState(() {
+    });
+  }
   @override
   void initState() {
-    getAlerts();
+    getAlerts(confirm);
     super.initState();
   }
   @override
@@ -40,7 +47,8 @@ class _AlertsState extends State<Alerts> {
         backgroundColor: Colors.lightBlue,
         actions: [
           IconButton(onPressed: (){
-            getAlerts();
+            setState(() {
+            });
           }, icon: Icon(Icons.refresh))
         ],
       ),
@@ -66,28 +74,30 @@ class _AlertsState extends State<Alerts> {
     );
   }
 }
-void getAlerts() async {
+void getAlerts(Function(String text) confirm) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/getAlerts.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'uid': uid,
-        }))
-        .timeout(const Duration(seconds: 5));
+    final db = await DatabaseHelper.instance.database;
+
+    final List<Map<String, dynamic>> alertResults = await db.query(
+        'alerts',
+        where: 'uid = ?',
+        whereArgs: [int.parse(uid)],
+        orderBy: 'created_at DESC' // optional, for latest alerts first
+    );
+
     messages.clear();
     titles.clear();
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      for (var row in jsonResponse) {
-        titles.add(row['title']);
-        messages.add(row['message']);
-      }
+
+    for (var row in alertResults) {
+      titles.add(row['title'].toString());
+      messages.add(row['message'].toString());
     }
+    confirm('hello');
+    print(titles);
+    print(messages);
   } catch (e) {
+    print('Error getting alerts: $e');
     return;
   }
 }

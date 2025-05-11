@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:http/http.dart' as http;
+import 'DatabaseHelper.dart';
 import 'notifications.dart';
 import 'dart:convert' as convert;
 import 'pill.dart';
@@ -20,6 +21,7 @@ class _PillClickState extends State<PillClick> {
 
   void confirm(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    Navigator.of(context).pop();
     Navigator.of(context).pop();
   }
 
@@ -126,18 +128,20 @@ class _PillClickState extends State<PillClick> {
 void takePill(Function(String text) confirm, int pillsTook, Pill pill) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/takePill.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'pid': pill.pid,
-          'pt' : pillsTook.toString()
-        }))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      int p = int.parse(pill.pid);
+    final db = await DatabaseHelper.instance.database;
+    if(pill.pillsTook == pill.totalPills){
+      confirm('No more pills to take');
+      return;
+    }
+    int p = int.parse(pill.pid);
+    pillsTook += pill.dose;
+    int count = await db.update(
+      'pills',
+      {'pillsTook': pillsTook},
+      where: 'pid = ?',
+      whereArgs: [p],
+    );
+    print(pillsTook);
 
       await AwesomeNotifications().cancel(int.parse('$p'));
       await AwesomeNotifications().cancel(int.parse('$uid$p\1'));
@@ -409,8 +413,7 @@ void takePill(Function(String text) confirm, int pillsTook, Pill pill) async {
        }
 
       });
-        confirm(response.body);
-    }
+    confirm('Success');
   } catch (e) {
     confirm('connection error');
   }

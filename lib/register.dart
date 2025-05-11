@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:sqflite/sqflite.dart';
 import 'dart:convert' as convert;
-
-const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
+import 'DatabaseHelper.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -182,23 +182,35 @@ class _RegisterState extends State<Register> {
             )));
   }
 }
-void registerUser(Function(String text) confirm, String username, String email, String password) async{
-  try{
-    final response = await http.post(
-        Uri.parse('$_baseURL/Register.php'),
-        headers: <String, String>{
-          'Content-Type' : 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'usr': username,
-          'email': email,
-          'pass': password
-        }))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      confirm(response.body);
+
+void registerUser(Function(String text) confirm, String username, String email, String password) async {
+  try {
+    final db = await DatabaseHelper.instance.database;
+
+    // Try inserting user
+    int id = await db.insert(
+      'users',
+      {
+        'username': username,
+        'email': email,
+        'password': password,
+      },
+      conflictAlgorithm: ConflictAlgorithm.abort, // Throws error if duplicate
+    );
+
+    if (id > 0) {
+      confirm('Registration successful');
+    } else {
+      confirm('Registration failed');
     }
-  }catch(e){
-    confirm('connection error');
+
+  } on DatabaseException catch (e) {
+    if (e.isUniqueConstraintError()) {
+      confirm('Username or email already exists');
+    } else {
+      confirm('Database error: $e');
+    }
+  } catch (e) {
+    confirm('Unexpected error: $e');
   }
 }

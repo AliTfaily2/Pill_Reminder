@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'home.dart';
 import 'register.dart';
+import 'package:pill_reminder/DatabaseHelper.dart';
 
-const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData =
 EncryptedSharedPreferences();
 
@@ -184,26 +184,34 @@ class _SignInState extends State<SignIn> {
   }
 }
 
+
+
 void checkLogin(
     Function(bool success) loginconfirm, String email, String password) async {
   try {
-    final response = await http
-        .post(Uri.parse('$_baseURL/login.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8'
-        },
-        body: convert
-            .jsonEncode(<String, String>{'email': email, 'pass': password}))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      var row = jsonResponse[0];
-      print('sign is ${row['uid']}');
-      _encryptedData.setString('myKey', row['uid']);
-      _encryptedData.setString('myName', row['name']);
-      loginconfirm(true);
+    final db = await DatabaseHelper.instance.database;
+
+    final result = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+    );
+    if (result.isNotEmpty) {
+      final user = result.first;
+
+      // Basic password check (in production, you'd hash this)
+      if (user['password'] == password) {
+        _encryptedData.setString('myKey', user['uid'].toString());
+        _encryptedData.setString('myName',  user['username'] as String);
+        loginconfirm(true);
+        return;
+      }
     }
+
+    // If no match or wrong password
+    loginconfirm(false);
   } catch (e) {
+    print(e);
     loginconfirm(false);
   }
 }

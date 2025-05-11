@@ -6,6 +6,7 @@ import 'signin.dart';
 import 'showpills.dart';
 import 'settings.dart';
 import 'alert.dart';
+import 'DatabaseHelper.dart';
 
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
@@ -208,29 +209,38 @@ class _HomeState extends State<Home> {
   }
 }
 
+
+
+
 void getUserData(
     Function(bool success) confirm, Function(String n) setName) async {
   try {
-    Future.delayed(const Duration(seconds: 1), () async{
-      String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/getUserData.php'),
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8'
-            },
-            body: convert.jsonEncode(<String, String>{'uid': uid}))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      var row = jsonResponse[0];
-      _encryptedData.setString('email', row['email']);
-      _encryptedData.setString('name',  row['name']);
-      _encryptedData.setString('notifOn', row['notif']);
-      _encryptedData.setString('notifNum', row['notifNum']);
-      setName(row['name']);
+    await Future.delayed(const Duration(seconds: 1)); // mimic async wait
+
+    String uid = await _encryptedData.getString('myKey');
+
+    final db = await DatabaseHelper.instance.database;
+    final result = await db.query(
+      'users',
+      where: 'uid = ?',
+      whereArgs: [uid],
+    );
+
+    if (result.isNotEmpty) {
+      final user = result.first;
+      print(user['notif']);
+      print(user['notifNum']);
+      _encryptedData.setString('email', user['email'] as String);
+      _encryptedData.setString('name',  user['username'] as String);
+      _encryptedData.setString('notifOn', user['notif'].toString());
+      _encryptedData.setString('notifNum', user['notifNum'].toString());
+      setName(user['username'] as String);
+      confirm(true);
+    } else {
+      confirm(false);
     }
-    });
   } catch (e) {
     confirm(false);
   }
 }
+

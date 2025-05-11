@@ -2,7 +2,10 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:sqflite/sqflite.dart';
 import 'dart:convert' as convert;
+
+import 'DatabaseHelper.dart';
 
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
@@ -61,7 +64,6 @@ class NotificationService {
   static Future<void> onNotificationDisplayedMethod(
       ReceivedNotification receivedNotification) async {
     addAlert(receivedNotification.title.toString(),receivedNotification.body.toString());
-
   }
 
   /// Use this method to detect if the user dismissed a notification
@@ -106,6 +108,12 @@ class NotificationService {
     } else {
       notificationTime = scheduledTime;
     }
+    int intervalInMinutes = notificationTime.difference(now).inMinutes;
+
+    if (intervalInMinutes < 6) {
+      print('Interval is too short: $intervalInMinutes minutes. Setting interval to 6 minutes.');
+      intervalInMinutes = 6; // Set interval to a valid value (6 minutes)
+    }
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -122,9 +130,7 @@ class NotificationService {
       ),
       actionButtons: actionButtons,
       schedule: NotificationInterval(
-        interval: (notificationTime.millisecondsSinceEpoch -
-                now.millisecondsSinceEpoch) ~/
-            1000,
+        interval: intervalInMinutes,
         timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
         preciseAlarm: true,
         repeats: true
@@ -197,6 +203,12 @@ class NotificationService {
     final now = DateTime.now();
     final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
     final notificationTime = scheduledTime.subtract(Duration(hours: before));
+    int intervalInMinutes = notificationTime.difference(now).inMinutes;
+
+    if (intervalInMinutes < 6) {
+      print('Interval is too short: $intervalInMinutes minutes. Setting interval to 6 minutes.');
+      intervalInMinutes = 6; // Set interval to a valid value (6 minutes)
+    }
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -213,9 +225,7 @@ class NotificationService {
       ),
       actionButtons: actionButtons,
       schedule: NotificationInterval(
-        interval: (notificationTime.millisecondsSinceEpoch -
-            now.millisecondsSinceEpoch) ~/
-            1000,
+        interval:intervalInMinutes,
         timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
         preciseAlarm: true,
       ),
@@ -227,19 +237,21 @@ class NotificationService {
 void addAlert(String title, String msg) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http.post(
-        Uri.parse('$_baseURL/addAlert.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'uid': uid,
-          'title': title,
-          'msg': msg,
-        }))
-        .timeout(const Duration(seconds: 5));
+    final db = await DatabaseHelper.instance.database;
 
+    await db.insert(
+      'alerts',
+      {
+        'uid': int.parse(uid),
+        'title': title,
+        'message': msg,
+        'created_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   } catch (e) {
+    print('Error adding alert: $e');
     return;
   }
 }
+

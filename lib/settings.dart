@@ -7,6 +7,7 @@ import 'dart:convert' as convert;
 import 'pill.dart';
 import 'notifications.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'DatabaseHelper.dart';
 
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
@@ -100,7 +101,7 @@ class _AppSettingsState extends State<AppSettings> {
                         letterSpacing: 2)),
                 Text(email,
                     style: const TextStyle(
-                        fontSize: 23,
+                        fontSize: 14,
                         fontWeight: FontWeight.w300,
                         letterSpacing: 2))
               ],
@@ -171,19 +172,17 @@ class _AppSettingsState extends State<AppSettings> {
 void getPills() async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/getPills.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'uid': uid,
-        }))
-        .timeout(const Duration(seconds: 5));
+
+
+    final db = await DatabaseHelper.instance.database;
+    final List<Map<String, dynamic>> pillResults = await db.query(
+      'pills',
+      where: 'uid = ?',
+      whereArgs: [int.tryParse(uid)],
+    );
     await AwesomeNotifications().cancelAllSchedules();
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      for (var row in jsonResponse) {
+
+      for (var row in pillResults) {
         Pill pill;
         if (row['hour2'] == null) {
           pill = Pill(
@@ -444,8 +443,9 @@ void getPills() async {
 
         }
       }
-        );}
-    }
+        );
+      }
+
   } catch (e) {
     return;
   }
@@ -453,24 +453,20 @@ void getPills() async {
 void changeSetting(String notif,String notifNum) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/updateNotifications.php'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'uid': uid,
-          'notif' : notif,
-          'notifNum' : notifNum
-        }))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      _encryptedData.remove('notifOn');
-      _encryptedData.remove('notifNum');
-      _encryptedData.setString('notifOn', notif);
-      _encryptedData.setString('notifNum',notifNum);
-      getPills();
-    }
+
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'users',
+      {
+        'notif': int.parse(notif),
+        'notifNum': int.parse(notifNum),
+      },
+      where: 'uid = ?',
+      whereArgs: [uid],
+    );
+    _encryptedData.setString('notifOn', notif);
+    _encryptedData.setString('notifNum', notifNum);
+    getPills();
     }catch(e) {
     return;
   }

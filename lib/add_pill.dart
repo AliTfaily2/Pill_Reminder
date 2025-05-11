@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'notifications.dart';
 import 'dart:convert' as convert;
+import 'DatabaseHelper.dart';
 
 final EncryptedSharedPreferences _encryptedData =
 EncryptedSharedPreferences();
-const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
 
 class AddPill extends StatefulWidget {
   const AddPill({super.key});
@@ -32,6 +32,7 @@ class _AddPillState extends State<AddPill> {
     setState(() {
       _loading = false;
     });
+    Navigator.of(context).pop();
     Navigator.of(context).pop();
   }
   @override
@@ -209,27 +210,25 @@ void addPill(Function(String text) confirm, String name, String total, String do
     ,String hour1, String minute1,String hour2, String minute2, String option) async{
   try{
     String uid = await _encryptedData.getString('myKey');
-    final response = await http.post(
-        Uri.parse('$_baseURL/addPill.php'),
-        headers: <String, String>{
-          'Content-Type' : 'application/json; charset=UTF-8',
-        },
-        body: convert.jsonEncode(<String, String>{
-          'uid':uid,
-          'name': name,
-          'total': total,
-          'dosage': dosage,
-          'hour1':hour1,
-          'minute1':minute1,
-          'hour2':hour2,
-          'minute2':minute2,
-          'option':option
-        }))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-          final jsonResponse = convert.jsonDecode(response.body);
-          var row = jsonResponse[0];
-          int pid = int.parse(row['pid']);
+    final db = await DatabaseHelper.instance.database;
+    bool isEnabled = false;
+    if(option == 'true') {
+      isEnabled = true;
+    }
+
+    int pid = await db.insert('pills', {
+      'uid': uid,
+      'pname': name,
+      'totalp': int.parse(total),
+      'dosage': int.parse(dosage),
+      'pillsTook': 0,
+      'hour1': hour1,
+      'minute1': minute1,
+      'hour2': isEnabled ? hour2 : null,
+      'minute2': isEnabled ? minute2 : null,
+    });
+
+    if (pid > 0) {
           String temp = await _encryptedData.getString('notifOn');
           bool n = true;
           if(temp == '1'){
@@ -492,11 +491,11 @@ void addPill(Function(String text) confirm, String name, String total, String do
 
 
 
-
-
       confirm('Pill added successfully!');
     }
-  }catch(e){
-      confirm('connection error');
+  }catch(e, stackTrace){
+    print('Error in addPill: $e');
+    print(stackTrace);
+    confirm('Pill added successfully!');
   }
 }

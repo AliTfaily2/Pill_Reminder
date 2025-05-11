@@ -5,6 +5,7 @@ import 'package:pill_reminder/pill_clicked.dart';
 import 'dart:convert' as convert;
 import 'add_pill.dart';
 import 'pill.dart';
+import 'DatabaseHelper.dart';
 
 final EncryptedSharedPreferences _encryptedData = EncryptedSharedPreferences();
 const String _baseURL = 'https://pillremindermedminder.000webhostapp.com';
@@ -185,43 +186,40 @@ class Buttons extends StatelessWidget {
 void getPills(Function(String text) confirm, Function() refresh) async {
   try {
     String uid = await _encryptedData.getString('myKey');
-    final response = await http
-        .post(Uri.parse('$_baseURL/getPills.php'),
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: convert.jsonEncode(<String, String>{
-              'uid': uid,
-            }))
-        .timeout(const Duration(seconds: 5));
+
     _pills.clear();
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      for (var row in jsonResponse) {
+
+    final db = await DatabaseHelper.instance.database;
+    final List<Map<String, dynamic>> pillResults = await db.query(
+      'pills',
+      where: 'uid = ?',
+      whereArgs: [int.tryParse(uid)],
+    );
+      for (var row in pillResults) {
         if (row['hour2'] == null) {
           Pill p = Pill(
-              row['pid'],
-              row['pname'],
-              int.parse(row['totalp']),
-              int.parse(row['dosage']),
-              int.parse(row['pillsTook']),
-              row['hour1'],
-              row['minute1'],
+              row['pid'].toString(),
+              row['pname'].toString(),
+              row['totalp'],
+              row['dosage'],
+              row['pillsTook'],
+              row['hour1'].toString(),
+              row['minute1'].toString(),
               '',
               '',
               false);
           _pills.add(p);
         } else {
           Pill p = Pill(
-              row['pid'],
-              row['pname'],
-              int.parse(row['totalp']),
-              int.parse(row['dosage']),
-              int.parse(row['pillsTook']),
-              row['hour1'],
-              row['minute1'],
-              row['hour2'],
-              row['minute2'],
+              row['pid'].toString(),
+              row['pname'].toString(),
+              row['totalp'],
+              row['dosage'],
+              row['pillsTook'],
+              row['hour1'].toString(),
+              row['minute1'].toString(),
+              row['hour2'].toString(),
+              row['minute2'].toString(),
               true);
           _pills.add(p);
         }
@@ -232,8 +230,9 @@ void getPills(Function(String text) confirm, Function() refresh) async {
         );
       }
       refresh();
-    }
+
   } catch (e) {
+    print(e);
     confirm('connection error');
   }
 }
